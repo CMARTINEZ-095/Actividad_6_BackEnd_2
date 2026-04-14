@@ -1,5 +1,6 @@
 package com.example.demo_basic.model.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -27,6 +28,6 @@ public class Cliente extends BaseEntity {
     @Column(name = "puntos_lealtad", nullable = false)
     private Integer puntosLealtad;
     
-    @OneToMany(mappedBy = "cliente")
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Orden> ordenes;
 }

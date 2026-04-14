@@ -4,6 +4,7 @@ import com.example.demo_basic.model.entity.Orden;
 import com.example.demo_basic.model.entity.Prenda;
 import com.example.demo_basic.model.enums.TipoPrenda;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CalculoTarifaTotal {
@@ -11,10 +12,10 @@ public class CalculoTarifaTotal {
     private static final double TARIFA_CAMISA = 15000.0;
     private static final double TARIFA_PANTALON = 20000.0;
 
-    
+    @Transactional
     public boolean procesar(Orden orden) {
         double total = 0.0;
-        
+
         for (Prenda prenda : orden.getPrendas()) {
             if (prenda.getTipo() == TipoPrenda.CAMISA) {
                 total += TARIFA_CAMISA;
@@ -22,7 +23,7 @@ public class CalculoTarifaTotal {
                 total += TARIFA_PANTALON;
             }
         }
-        
+
         orden.setTotal(total);
         return true;
     }

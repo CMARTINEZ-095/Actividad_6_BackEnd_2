@@ -2,85 +2,67 @@ package com.example.demo_basic.controller;
 
 import com.example.demo_basic.model.entity.Cliente;
 import com.example.demo_basic.repository.ClienteRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
-/**
- * Controlador de Cliente (Capa de Presentación / API)
- * Aquí recibimos las peticiones HTTP (GET, POST) referentes a los clientes.
- */
 @RestController
 @RequestMapping("/api/clientes")
+@Tag(name = "Clientes", description = "Gestión de clientes")
 public class ClienteController {
 
-    // Inyectamos el repositorio para poder guardar y buscar clientes en la BD
     @Autowired
     private ClienteRepository clienteRepository;
 
-    /**
-     * Endpoint para crear un cliente nuevo.
-     * @param cliente Datos del cliente en formato JSON
-     * @return El cliente creado con su ID y Puntos de Lealtad inicializados
-     */
-    @PostMapping
-    public ResponseEntity<Cliente> crearCliente(@RequestBody Cliente cliente) {
-        // Aseguramos que si no envían puntos, inicie en cero (0)
-        if (cliente.getPuntosLealtad() == null) {
-            cliente.setPuntosLealtad(0);
-        }
-        
-        // Guardamos en Base de Datos (Prisma/PostgreSQL)
-        Cliente nuevoCliente = clienteRepository.save(cliente);
-        
-        // Retornamos estado HTTP 200 (OK) con el cliente guardado
-        return ResponseEntity.ok(nuevoCliente);
-    }
-
-    /**
-     * Endpoint para obtener la lista de todos los clientes.
-     */
+    @Operation(summary = "Obtener todos los clientes")
     @GetMapping
-    public ResponseEntity<List<Cliente>> obtenerClientes() {
-        return ResponseEntity.ok(clienteRepository.findAll());
+    public List<Cliente> getAll() {
+        return clienteRepository.findAll();
     }
 
-    /**
-     * Endpoint para obtener un cliente específico por su ID.
-     */
+    @Operation(summary = "Obtener un cliente por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<Cliente> obtenerClientePorId(@PathVariable Long id) {
+    public Cliente getById(@PathVariable Long id) {
         return clienteRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new NoSuchElementException("Cliente no encontrado con id: " + id));
     }
 
-    /**
-     * Endpoint para actualizar los datos de un cliente existente.
-     */
+    @Operation(summary = "Crear un cliente")
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Cliente create(@RequestBody Cliente request) {
+        return clienteRepository.save(request);
+    }
+
+    @Operation(summary = "Actualizar un cliente")
     @PutMapping("/{id}")
-    public ResponseEntity<Cliente> actualizarCliente(@PathVariable Long id, @RequestBody Cliente detallesCliente) {
-        return clienteRepository.findById(id)
-                .map(cliente -> {
-                    cliente.setNombre(detallesCliente.getNombre());
-                    cliente.setTelefono(detallesCliente.getTelefono());
-                    // No actualizamos puntos de lealtad aquí para evitar trampas, o depende de tu regla
-                    return ResponseEntity.ok(clienteRepository.save(cliente));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public Cliente update(@PathVariable Long id, @RequestBody Cliente request) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Cliente no encontrado con id: " + id));
+        cliente.setNombre(request.getNombre());
+        cliente.setTelefono(request.getTelefono());
+        return clienteRepository.save(cliente);
     }
 
-    /**
-     * Endpoint para eliminar un cliente por su ID.
-     */
+    @Operation(summary = "Eliminar un cliente")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarCliente(@PathVariable Long id) {
-        if (!clienteRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        clienteRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Cliente no encontrado con id: " + id));
         clienteRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 }
